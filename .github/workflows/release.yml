@@ -1,0 +1,75 @@
+name: Automated Release
+
+on:
+  push:
+    branches:
+      - main
+    tags-ignore:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Zero-Touch Release & Tagging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Run Full Validation
+        run: ./gradlew check test --no-daemon
+
+      - name: Determine Next Semantic Version & Tag
+        id: semver
+        run: |
+          git fetch --tags --force
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+          echo "Current latest tag: $LATEST_TAG"
+          
+          VERSION="${LATEST_TAG#v}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          
+          COMMITS=$(git log "${LATEST_TAG}..HEAD" --oneline 2>/dev/null || git log -1 --oneline)
+          echo "Commits since last tag:"
+          echo "$COMMITS"
+          
+          if echo "$COMMITS" | grep -qE "BREAKING CHANGE|feat!|fix!"; then
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          elif echo "$COMMITS" | grep -qE "^[a-f0-9]+ feat(\([^\)]+\))?:"; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          else
+            PATCH=$((PATCH + 1))
+          fi
+          
+          NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "Next release tag: $NEW_TAG"
+          echo "tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.semver.outputs.tag }}
+        run: |
+          echo "Creating automated release $TAG..."
+          git tag "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" \
+            --title "Release $TAG" \
+            --generate-notes \
+            --verify-tag
