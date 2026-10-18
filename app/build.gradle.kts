@@ -24,9 +24,24 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
 }
 
+kotlin {
+    sourceSets["main"].kotlin.srcDirs(
+        "src/main/kotlin",
+        "../../laya-onnx-android/android/src/main/kotlin"
+    )
+}
+
 tasks.test {
     useJUnitPlatform()
+    val rustTargetDir = file("../../laya-onnx-android/target/debug").absolutePath
+    val sharedReleaseDir = "/home/runner/target/tomb_of_heroes/release"
+    val sharedDebugDepsDir = "/home/runner/target/tomb_of_heroes/debug/deps"
+    systemProperty(
+        "java.library.path",
+        "$sharedReleaseDir:$sharedDebugDepsDir:$rustTargetDir:${System.getProperty("java.library.path", "")}"
+    )
     testLogging {
         events("passed", "skipped", "failed")
     }
 }
+
