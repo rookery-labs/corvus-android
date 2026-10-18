@@ -22,5 +22,13 @@ This repository encapsulates the core Android application for Corvus (a speciali
 3. **Local SLM Inactivity TTL (`specs/memory-ttl.md`):**
    - Enforce 60-second countdown in `MemoryTtlStateMachine`.
    - Release native weights immediately on `LowMemory` signals or when the 60s countdown hits zero.
-4. **Testing Protocol:**
-   - Execute `./gradlew test --no-daemon` before every commit.
+4. **Branch & Worktree Isolation (Sanctuary of `main`):**
+   - Strictly prohibit direct commits or pushes on `main`.
+   - All work must be conducted in dedicated branches (`feat/...`, `fix/...`) within an isolated worktree (`just worktree-add`).
+   - Merge only when `./gradlew check test --no-daemon` is 100% green.
+5. **Renovate Automated Dependencies & Zero-Touch Release:**
+   - Automated dependency PRs (patch/minor) merge automatically to `main` upon passing all Gradle checks and JUnit 5 tests.
+   - Merges to `main` automatically publish a new semantic release and tag.
+6. **Testing Protocol:**
+   - Execute `./gradlew check test --no-daemon` before every commit.
+
