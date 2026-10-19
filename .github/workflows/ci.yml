@@ -28,7 +28,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
 
       - name: Run Gradle Verification & Tests
-        run: ./gradlew check test --no-daemon
+        run: |
+          chmod +x ./gradlew
+          ./gradlew check test --no-daemon
 
       - name: Enable Automerge for Renovate PRs
         if: github.event_name == 'pull_request' && (github.actor == 'renovate[bot]' || contains(github.event.pull_request.labels.*.name, 'dependencies') || contains(github.event.pull_request.labels.*.name, 'automerge'))
