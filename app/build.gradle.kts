@@ -26,8 +26,7 @@ dependencies {
 
 kotlin {
     sourceSets["main"].kotlin.srcDirs(
-        "src/main/kotlin",
-        "../../laya-onnx-android/android/src/main/kotlin"
+        "src/main/kotlin"
     )
 }
 
